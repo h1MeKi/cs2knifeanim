@@ -12,21 +12,18 @@ public class M9AnimationController {
     public static M9AnimationController getInstance() { return INSTANCE; }
 
     private long animationStartTime = -1;
-    private float animationDuration = 0.8f;
+    private float animationDuration = 0.6f;
 
     private final Map<Player, Item> lastItemMap = new WeakHashMap<>();
-    private final Map<Player, Integer> lastSlotMap = new WeakHashMap<>(); // 记录选中槽位
+    private final Map<Player, Integer> lastSlotMap = new WeakHashMap<>();
 
     private M9AnimationController() {}
 
-    // 判断是否为首次切刀（物品变化 或 选中槽位变化）
     public boolean isFirstSwitch(Player player, ItemStack currentStack, int currentSlot) {
         if (player == null || currentStack == null) return false;
         Item lastItem = lastItemMap.get(player);
         Integer lastSlot = lastSlotMap.get(player);
         Item currentItem = currentStack.getItem();
-        
-        // 如果物品类型变了，或者选中的快捷栏槽位变了（滚轮切换），都触发动画
         return lastItem != currentItem || lastSlot == null || lastSlot != currentSlot;
     }
 
@@ -39,7 +36,8 @@ public class M9AnimationController {
 
     public void startAnimation(float durationSeconds) {
         this.animationStartTime = System.currentTimeMillis();
-        this.animationDuration = durationSeconds;
+        // 保护机制：时长绝对不能低于 0.2 秒，否则除以 0 会让动画消失
+        this.animationDuration = Math.max(0.2f, durationSeconds); 
     }
 
     public float getAnimationProgress(float partialTick) {
