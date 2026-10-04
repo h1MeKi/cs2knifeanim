@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.cs2knifeanim.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "M9BayonetAnimationMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
