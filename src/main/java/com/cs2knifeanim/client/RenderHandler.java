@@ -27,7 +27,7 @@ public class RenderHandler {
         if (player == null) return;
 
         M9AnimationController controller = M9AnimationController.getInstance();
-        int selectedSlot = player.getInventory().selected; // 获取当前选中的快捷栏槽位
+        int selectedSlot = player.getInventory().getSelectedSlot(); // 获取当前选中的快捷栏槽位
 
         // 判断是否是首次切刀（物品变化 或 槽位变化）
         if (controller.isFirstSwitch(player, event.getItemStack(), selectedSlot)) {
