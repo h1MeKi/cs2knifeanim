@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(FirstPersonHandsAndItemsRenderer.class)
 public class M9BayonetAnimationMixin {
 
-    @Inject(method = "renderHandsWithItems", at = @At("HEAD"))
+    @Inject(method = "renderHandsWithItems", at = @At("HEAD"), remap = true)
     private void onRenderHandsWithItems(float partialTick, PoseStack poseStack, AbstractClientPlayer player, InteractionHand hand, ItemStack stack, CallbackInfo ci) {
         if (hand != InteractionHand.MAIN_HAND || !isSword(stack)) return;
 
