@@ -18,7 +18,6 @@ public class RenderHandler {
 
     @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
-        // 只处理主手，且必须是剑类物品
         if (event.getHand() != InteractionHand.MAIN_HAND || !isSword(event.getItemStack())) {
             return;
         }
@@ -27,19 +26,17 @@ public class RenderHandler {
         if (player == null) return;
 
         M9AnimationController controller = M9AnimationController.getInstance();
-        int selectedSlot = player.getInventory().getSelectedSlot(); // 获取当前选中的快捷栏槽位
+        int selectedSlot = player.getInventory().getSelectedSlot();
 
-        // 判断是否是首次切刀（物品变化 或 槽位变化）
         if (controller.isFirstSwitch(player, event.getItemStack(), selectedSlot)) {
-            // 基于攻击冷却时间计算动画长度
+            // 修复核心：不再直接使用可能为 0 的冷却值，而是限制在 0.4~0.8 秒之间
             float attackSpeed = player.getCurrentItemAttackStrengthDelay();
-            float animationDuration = Math.min(attackSpeed / 20.0f, 0.8f); // 最长0.8秒
+            float animationDuration = Math.min(0.8f, Math.max(0.4f, attackSpeed / 20.0f));
 
             controller.startAnimation(animationDuration);
             controller.markSwitched(player, event.getItemStack(), selectedSlot);
             
-            // 调试日志：触发时打印
-            System.out.println("[CS2 Knife] Animation started! Slot: " + selectedSlot + ", Duration: " + animationDuration + "s");
+            System.out.println("[CS2 Knife] Animation started! Duration: " + animationDuration + "s");
         }
 
         float animProgress = controller.getAnimationProgress(event.getPartialTick());
@@ -49,34 +46,24 @@ public class RenderHandler {
         }
     }
 
-      private static void applyM9BayonetTransform(PoseStack poseStack, float progress) {
-        // progress 从 1.0（开始）到 0.0（结束），我们转换为 t 从 0.0 到 1.0
+    private static void applyM9BayonetTransform(PoseStack poseStack, float progress) {
+        // progress 从 1.0（开始）到 0.0（结束），转换为 t 从 0.0 到 1.0
         float t = 1.0f - progress;
-
-        // 使用正弦函数，让平移和旋转在动画中间达到最大值，两端平滑归位
+        // 正弦波：让平移和旋转在动画中间达到最大值，两端平滑归零
         float sinValue = (float) Math.sin(t * Math.PI);
 
-        // 1. 抬手/下压效果：轻微下移再回位（模拟抽刀）
+        // 1. 抬手/下压：轻微下移再回位
         float translateY = -0.2f * sinValue; 
-        poseStack.translate(0, translateY, 0);
+        // 2. 向右轻微摆动
+        float translateX = 0.1f * sinValue;
+        poseStack.translate(translateX, translateY, 0);
 
-        // 2. 旋转效果：Z轴翻滚（手腕转动）+ X轴倾斜（刀刃翻转）
-        float roll = -180f * sinValue; // 绕 Z 轴翻滚 180 度
-        float pitch = -30f * sinValue; // 绕 X 轴倾斜 30 度
+        // 3. 旋转：Z轴翻滚 180 度 + X轴倾斜 30 度
+        float roll = -180f * sinValue;
+        float pitch = -30f * sinValue;
 
         poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.ZP.rotationDegrees(roll)));
         poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(pitch)));
-
-        // 3. 向右轻微摆动，让动作更自然
-        float translateX = 0.1f * sinValue;
-        poseStack.translate(translateX, 0, 0);
-    }
-
-    private static float easeOutCubic(float t) { return 1 - (float) Math.pow(1 - t, 3); }
-    private static float easeInOutQuad(float t) { return t < 0.5f ? 2*t*t : 1 - (float) Math.pow(-2*t + 2, 2) / 2; }
-    private static float easeOutBack(float t) {
-        float c1 = 1.70158f, c3 = c1 + 1;
-        return 1 + c3 * (float) Math.pow(t - 1, 3) + c1 * (float) Math.pow(t - 1, 2);
     }
 
     private static boolean isSword(ItemStack stack) {
