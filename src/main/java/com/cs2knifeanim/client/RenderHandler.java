@@ -49,7 +49,7 @@ public class RenderHandler {
         }
     }
 
-    private static void applyM9BayonetTransform(PoseStack poseStack, float progress) {
+     private static void applyM9BayonetTransform(PoseStack poseStack, float progress) {
         // 阶段1: 抬手 (0.0 - 0.3)
         float raiseProgress = Math.min(progress / 0.3f, 1.0f);
         // 阶段2: 旋转 (0.3 - 0.7)
@@ -61,19 +61,19 @@ public class RenderHandler {
         float spinEase = easeInOutQuad(spinProgress);
         float settleEase = easeOutBack(settleProgress);
 
-        // 位置偏移（抬手）
-        poseStack.translate(0, -0.2 * (1 - raiseEase), 0);
+        // 1. 抬手：向上移动 (Minecraft Y轴正方向向上)
+        poseStack.translate(0, 0.3 * raiseEase, 0);
 
-        // ⚠️ 修复旋转：改为绕 Z 轴（屏幕平面内翻转），角度调整到 -90 度
-        float rotationAngle = -90 * spinEase + 45 * settleEase; 
-        
-        // 26.3版本渲染修复：包装进 Matrix4f
-        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.ZP.rotationDegrees(rotationAngle)));
-        // 辅助的 X 轴旋转，让翻转更立体
-        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(-30 * spinEase)));
+        // 2. 旋转：改用 Y轴 和 X轴，做出明显的刺刀翻转效果
+        float yRotation = -120 * spinEase; // 绕Y轴旋转
+        float xRotation = -45 * spinEase;  // 绕X轴旋转
 
-        // 微调稳定
-        poseStack.translate(0.05 * settleEase, 0.05 * settleEase, 0);
+        // 应用旋转（这里从 ZP 改成了 YP 和 XP）
+        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.YP.rotationDegrees(yRotation)));
+        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(xRotation)));
+
+        // 3. 稳定：微调
+        poseStack.translate(0.1 * settleEase, 0, 0);
     }
 
     private static float easeOutCubic(float t) { return 1 - (float) Math.pow(1 - t, 3); }
