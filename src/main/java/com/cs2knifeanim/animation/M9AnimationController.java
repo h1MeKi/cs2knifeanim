@@ -11,8 +11,8 @@ public class M9AnimationController {
     private static final M9AnimationController INSTANCE = new M9AnimationController();
     public static M9AnimationController getInstance() { return INSTANCE; }
 
-    private float animationProgress = -1;
-    private float animationSpeed = 0.05f; // 默认速度
+    private long animationStartTime = -1;
+    private float animationDuration = 0.8f;
 
     private final Map<Player, Item> lastItemMap = new WeakHashMap<>();
 
@@ -32,19 +32,19 @@ public class M9AnimationController {
     }
 
     public void startAnimation(float durationSeconds) {
-        this.animationProgress = 1.0f;
-        // 根据冷却时间计算动画播放速度（确保时长与冷却挂钩）
-        this.animationSpeed = 0.05f * (1.0f / durationSeconds);
+        this.animationStartTime = System.currentTimeMillis();
+        this.animationDuration = durationSeconds;
     }
 
     public float getAnimationProgress(float partialTick) {
-        if (animationProgress < 0) return -1;
-        animationProgress -= animationSpeed * partialTick;
-        if (animationProgress < 0) {
-            animationProgress = -1;
+        if (animationStartTime < 0) return -1;
+        long elapsed = System.currentTimeMillis() - animationStartTime;
+        float progress = 1.0f - (elapsed / (animationDuration * 1000.0f));
+        if (progress < 0) {
+            animationStartTime = -1;
             return -1;
         }
-        return animationProgress;
+        return progress;
     }
 
     public void resetPlayer(Player player) {
