@@ -11,7 +11,9 @@ public class M9AnimationController {
     private static final M9AnimationController INSTANCE = new M9AnimationController();
     public static M9AnimationController getInstance() { return INSTANCE; }
 
-    private float animationProgress = -1; // -1 表示没有动画
+    private float animationProgress = -1;
+    private float animationSpeed = 0.05f; // 默认速度
+
     private final Map<Player, Item> lastItemMap = new WeakHashMap<>();
 
     private M9AnimationController() {}
@@ -29,14 +31,15 @@ public class M9AnimationController {
         }
     }
 
-    public void startAnimation() {
-        this.animationProgress = 1.0f; // 从1.0开始，然后递减到0
+    public void startAnimation(float durationSeconds) {
+        this.animationProgress = 1.0f;
+        // 根据冷却时间计算动画播放速度（确保时长与冷却挂钩）
+        this.animationSpeed = 0.05f * (1.0f / durationSeconds);
     }
 
     public float getAnimationProgress(float partialTick) {
         if (animationProgress < 0) return -1;
-        // 每帧减少进度，具体速度可以调整
-        animationProgress -= 0.05f * partialTick;
+        animationProgress -= animationSpeed * partialTick;
         if (animationProgress < 0) {
             animationProgress = -1;
             return -1;
