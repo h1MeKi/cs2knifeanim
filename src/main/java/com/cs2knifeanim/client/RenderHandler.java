@@ -3,7 +3,9 @@ package com.cs2knifeanim.client;
 import com.cs2knifeanim.animation.M9AnimationController;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
@@ -21,7 +23,21 @@ public class RenderHandler {
             return;
         }
 
+        Player player = Minecraft.getInstance().player;
+        if (player == null) return;
+
         M9AnimationController controller = M9AnimationController.getInstance();
+
+        // 判断是否是首次切刀（物品发生变化）
+        if (controller.isFirstSwitch(player, event.getItemStack())) {
+            // 基于攻击冷却时间计算动画长度
+            float attackSpeed = player.getCurrentItemAttackStrengthDelay();
+            float animationDuration = Math.min(attackSpeed / 20.0f, 0.8f); // 最长0.8秒
+
+            controller.startAnimation(animationDuration);
+            controller.markSwitched(player, event.getItemStack());
+        }
+
         float animProgress = controller.getAnimationProgress(event.getPartialTick());
 
         if (animProgress >= 0 && animProgress <= 1) {
@@ -47,8 +63,10 @@ public class RenderHandler {
 
         // 旋转（M9刺刀特有的旋转动作）
         float rotationAngle = -180 * spinEase + 360 * settleEase * 0.5f;
-        poseStack.mulPose(Axis.YP.rotationDegrees(rotationAngle));
-        poseStack.mulPose(Axis.XP.rotationDegrees(-30 * spinEase));
+        
+        // ⚠️ 修复点：26.3版本的 PoseStack 不再直接接受 Quaternionf，需要包装进 Matrix4f
+        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.YP.rotationDegrees(rotationAngle)));
+        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(-30 * spinEase)));
 
         // 微调稳定
         poseStack.translate(0.05 * settleEase, 0.05 * settleEase, 0);
