@@ -36,6 +36,9 @@ public class RenderHandler {
 
             controller.startAnimation(animationDuration);
             controller.markSwitched(player, event.getItemStack());
+            
+            // ⚠️ 调试日志：如果切刀触发，控制台会打印这句话
+            System.out.println("[CS2 Knife] Animation started! Duration: " + animationDuration + "s");
         }
 
         float animProgress = controller.getAnimationProgress(event.getPartialTick());
@@ -64,7 +67,7 @@ public class RenderHandler {
         // 旋转（M9刺刀特有的旋转动作）
         float rotationAngle = -180 * spinEase + 360 * settleEase * 0.5f;
         
-        // ⚠️ 修复点：26.3版本的 PoseStack 不再直接接受 Quaternionf，需要包装进 Matrix4f
+        // 26.3版本渲染修复：包装进 Matrix4f
         poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.YP.rotationDegrees(rotationAngle)));
         poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(-30 * spinEase)));
 
