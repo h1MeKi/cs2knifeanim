@@ -18,6 +18,7 @@ public class RenderHandler {
 
     @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
+        // 1. 过滤：只处理主手和剑
         if (event.getHand() != InteractionHand.MAIN_HAND || !isSword(event.getItemStack())) {
             return;
         }
@@ -28,21 +29,26 @@ public class RenderHandler {
         M9AnimationController controller = M9AnimationController.getInstance();
         int selectedSlot = player.getInventory().getSelectedSlot();
 
+        // 2. 判断切刀
         if (controller.isFirstSwitch(player, event.getItemStack(), selectedSlot)) {
-            // 修复核心：不再直接使用可能为 0 的冷却值，而是限制在 0.4~0.8 秒之间
-            float attackSpeed = player.getCurrentItemAttackStrengthDelay();
-            float animationDuration = Math.min(0.8f, Math.max(0.4f, attackSpeed / 20.0f));
-
+            float animationDuration = 0.6f; // 固定 0.6 秒，排除冷却机制干扰
             controller.startAnimation(animationDuration);
             controller.markSwitched(player, event.getItemStack(), selectedSlot);
             
-            System.out.println("[CS2 Knife] Animation started! Duration: " + animationDuration + "s");
+            // 【关键排查点】每次触发切刀，控制台都会打印这句话
+            System.out.println("[CS2 Knife] Animation started! Slot: " + selectedSlot + ", Duration: " + animationDuration);
         }
 
         float animProgress = controller.getAnimationProgress(event.getPartialTick());
 
         if (animProgress >= 0 && animProgress <= 1) {
-            applyM9BayonetTransform(event.getPoseStack(), animProgress);
+            // 【关键排查点】如果动画在播放，控制台会疯狂打印进度
+            // System.out.println("[CS2 Knife] Anim Progress: " + animProgress); 
+            
+            PoseStack poseStack = event.getPoseStack();
+            poseStack.pushPose(); // 保存当前渲染状态
+            applyM9BayonetTransform(poseStack, animProgress);
+            poseStack.popPose();  // 恢复渲染状态，避免影响其他渲染
         }
     }
 
