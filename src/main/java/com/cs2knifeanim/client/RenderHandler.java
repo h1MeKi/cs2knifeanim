@@ -31,42 +31,38 @@ public class RenderHandler {
 
         // 2. 判断切刀
         if (controller.isFirstSwitch(player, event.getItemStack(), selectedSlot)) {
-            float animationDuration = 0.6f; // 固定 0.6 秒，排除冷却机制干扰
+            float animationDuration = 1.0f; // 加长到 1 秒，容易观察
             controller.startAnimation(animationDuration);
             controller.markSwitched(player, event.getItemStack(), selectedSlot);
             
-            // 【关键排查点】每次触发切刀，控制台都会打印这句话
-            System.out.println("[CS2 Knife] Animation started! Slot: " + selectedSlot + ", Duration: " + animationDuration);
+            // 【强制日志】切刀触发时打印
+            System.out.println("[CS2 Knife] Triggered! Slot: " + selectedSlot);
         }
 
         float animProgress = controller.getAnimationProgress(event.getPartialTick());
 
         if (animProgress >= 0 && animProgress <= 1) {
-            // 【关键排查点】如果动画在播放，控制台会疯狂打印进度
-            // System.out.println("[CS2 Knife] Anim Progress: " + animProgress); 
+            // 【强制日志】如果动画在执行，会每秒打印几十次
+            // System.out.println("[CS2 Knife] Animating! Progress: " + animProgress);
             
             PoseStack poseStack = event.getPoseStack();
-            poseStack.pushPose(); // 保存当前渲染状态
+            poseStack.pushPose(); 
             applyM9BayonetTransform(poseStack, animProgress);
-            poseStack.popPose();  // 恢复渲染状态，避免影响其他渲染
+            poseStack.popPose(); 
         }
     }
 
     private static void applyM9BayonetTransform(PoseStack poseStack, float progress) {
-        // progress 从 1.0（开始）到 0.0（结束），转换为 t 从 0.0 到 1.0
         float t = 1.0f - progress;
-        // 正弦波：让平移和旋转在动画中间达到最大值，两端平滑归零
         float sinValue = (float) Math.sin(t * Math.PI);
 
-        // 1. 抬手/下压：轻微下移再回位
-        float translateY = -0.2f * sinValue; 
-        // 2. 向右轻微摆动
-        float translateX = 0.1f * sinValue;
+        // ⚠️ 极端测试数值：大幅平移和旋转，只要生效，屏幕就会剧烈晃动
+        float translateY = -2.0f * sinValue; 
+        float translateX = 2.0f * sinValue;
         poseStack.translate(translateX, translateY, 0);
 
-        // 3. 旋转：Z轴翻滚 180 度 + X轴倾斜 30 度
-        float roll = -180f * sinValue;
-        float pitch = -30f * sinValue;
+        float roll = -360f * sinValue; // 整整转一圈
+        float pitch = -90f * sinValue;
 
         poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.ZP.rotationDegrees(roll)));
         poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(pitch)));
