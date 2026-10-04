@@ -49,31 +49,27 @@ public class RenderHandler {
         }
     }
 
-     private static void applyM9BayonetTransform(PoseStack poseStack, float progress) {
-        // 阶段1: 抬手 (0.0 - 0.3)
-        float raiseProgress = Math.min(progress / 0.3f, 1.0f);
-        // 阶段2: 旋转 (0.3 - 0.7)
-        float spinProgress = Math.max(0, Math.min((progress - 0.3f) / 0.4f, 1.0f));
-        // 阶段3: 稳定 (0.7 - 1.0)
-        float settleProgress = Math.max(0, (progress - 0.7f) / 0.3f);
+      private static void applyM9BayonetTransform(PoseStack poseStack, float progress) {
+        // progress 从 1.0（开始）到 0.0（结束），我们转换为 t 从 0.0 到 1.0
+        float t = 1.0f - progress;
 
-        float raiseEase = easeOutCubic(raiseProgress);
-        float spinEase = easeInOutQuad(spinProgress);
-        float settleEase = easeOutBack(settleProgress);
+        // 使用正弦函数，让平移和旋转在动画中间达到最大值，两端平滑归位
+        float sinValue = (float) Math.sin(t * Math.PI);
 
-        // 1. 抬手：向上移动 (Minecraft Y轴正方向向上)
-        poseStack.translate(0, 0.3 * raiseEase, 0);
+        // 1. 抬手/下压效果：轻微下移再回位（模拟抽刀）
+        float translateY = -0.2f * sinValue; 
+        poseStack.translate(0, translateY, 0);
 
-        // 2. 旋转：改用 Y轴 和 X轴，做出明显的刺刀翻转效果
-        float yRotation = -120 * spinEase; // 绕Y轴旋转
-        float xRotation = -45 * spinEase;  // 绕X轴旋转
+        // 2. 旋转效果：Z轴翻滚（手腕转动）+ X轴倾斜（刀刃翻转）
+        float roll = -180f * sinValue; // 绕 Z 轴翻滚 180 度
+        float pitch = -30f * sinValue; // 绕 X 轴倾斜 30 度
 
-        // 应用旋转（这里从 ZP 改成了 YP 和 XP）
-        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.YP.rotationDegrees(yRotation)));
-        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(xRotation)));
+        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.ZP.rotationDegrees(roll)));
+        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(pitch)));
 
-        // 3. 稳定：微调
-        poseStack.translate(0.1 * settleEase, 0, 0);
+        // 3. 向右轻微摆动，让动作更自然
+        float translateX = 0.1f * sinValue;
+        poseStack.translate(translateX, 0, 0);
     }
 
     private static float easeOutCubic(float t) { return 1 - (float) Math.pow(1 - t, 3); }
