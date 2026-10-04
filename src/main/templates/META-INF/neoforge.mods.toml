@@ -21,3 +21,5 @@ type="required"
 versionRange="[26.3,)"
 ordering="NONE"
 side="BOTH"
+[[mixins]]
+config="cs2knifeanim.mixins.json"
