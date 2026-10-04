@@ -11,20 +11,15 @@ public class M9AnimationController {
     private static final M9AnimationController INSTANCE = new M9AnimationController();
     public static M9AnimationController getInstance() { return INSTANCE; }
 
-    private int animationTicks = 0;
-    private int animationDurationTicks = 0;
-    private boolean isAnimating = false;
-
+    private float animationProgress = -1; // -1 表示没有动画
     private final Map<Player, Item> lastItemMap = new WeakHashMap<>();
 
     private M9AnimationController() {}
 
-    // 判断是否为“首次切刀”（手持物品发生变化时）
     public boolean isFirstSwitch(Player player, ItemStack currentStack) {
         if (player == null || currentStack == null) return false;
         Item lastItem = lastItemMap.get(player);
         Item currentItem = currentStack.getItem();
-        // 如果上次记录的物品与当前不同，说明触发了切刀
         return lastItem != currentItem;
     }
 
@@ -34,26 +29,19 @@ public class M9AnimationController {
         }
     }
 
-    public void startAnimation(float durationSeconds) {
-        this.animationDurationTicks = (int) (durationSeconds * 20);
-        this.animationTicks = animationDurationTicks;
-        this.isAnimating = true;
+    public void startAnimation() {
+        this.animationProgress = 1.0f; // 从1.0开始，然后递减到0
     }
 
-    // 获取动画进度 (1.0 = 刚开始, 0.0 = 结束)
     public float getAnimationProgress(float partialTick) {
-        if (!isAnimating) return -1;
-        float progress = (animationTicks - partialTick) / (float) animationDurationTicks;
-        return Math.max(0, Math.min(1, progress));
-    }
-
-    public void tick() {
-        if (isAnimating) {
-            animationTicks--;
-            if (animationTicks <= 0) {
-                isAnimating = false;
-            }
+        if (animationProgress < 0) return -1;
+        // 每帧减少进度，具体速度可以调整
+        animationProgress -= 0.05f * partialTick;
+        if (animationProgress < 0) {
+            animationProgress = -1;
+            return -1;
         }
+        return animationProgress;
     }
 
     public void resetPlayer(Player player) {
