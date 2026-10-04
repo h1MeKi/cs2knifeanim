@@ -44,7 +44,9 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
-
+mixins {
+        config "cs2knifeanim.mixins.json"
+    }
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
