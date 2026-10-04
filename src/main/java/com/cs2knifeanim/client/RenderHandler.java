@@ -27,24 +27,24 @@ public class RenderHandler {
         if (player == null) return;
 
         M9AnimationController controller = M9AnimationController.getInstance();
+        int selectedSlot = player.getInventory().selected; // 获取当前选中的快捷栏槽位
 
-        // 判断是否是首次切刀（物品发生变化）
-        if (controller.isFirstSwitch(player, event.getItemStack())) {
+        // 判断是否是首次切刀（物品变化 或 槽位变化）
+        if (controller.isFirstSwitch(player, event.getItemStack(), selectedSlot)) {
             // 基于攻击冷却时间计算动画长度
             float attackSpeed = player.getCurrentItemAttackStrengthDelay();
             float animationDuration = Math.min(attackSpeed / 20.0f, 0.8f); // 最长0.8秒
 
             controller.startAnimation(animationDuration);
-            controller.markSwitched(player, event.getItemStack());
+            controller.markSwitched(player, event.getItemStack(), selectedSlot);
             
-            // ⚠️ 调试日志：如果切刀触发，控制台会打印这句话
-            System.out.println("[CS2 Knife] Animation started! Duration: " + animationDuration + "s");
+            // 调试日志：触发时打印
+            System.out.println("[CS2 Knife] Animation started! Slot: " + selectedSlot + ", Duration: " + animationDuration + "s");
         }
 
         float animProgress = controller.getAnimationProgress(event.getPartialTick());
 
         if (animProgress >= 0 && animProgress <= 1) {
-            // 应用M9刺刀动画变换
             applyM9BayonetTransform(event.getPoseStack(), animProgress);
         }
     }
@@ -64,11 +64,12 @@ public class RenderHandler {
         // 位置偏移（抬手）
         poseStack.translate(0, -0.2 * (1 - raiseEase), 0);
 
-        // 旋转（M9刺刀特有的旋转动作）
-        float rotationAngle = -180 * spinEase + 360 * settleEase * 0.5f;
+        // ⚠️ 修复旋转：改为绕 Z 轴（屏幕平面内翻转），角度调整到 -90 度
+        float rotationAngle = -90 * spinEase + 45 * settleEase; 
         
         // 26.3版本渲染修复：包装进 Matrix4f
-        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.YP.rotationDegrees(rotationAngle)));
+        poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.ZP.rotationDegrees(rotationAngle)));
+        // 辅助的 X 轴旋转，让翻转更立体
         poseStack.mulPose(new org.joml.Matrix4f().rotate(Axis.XP.rotationDegrees(-30 * spinEase)));
 
         // 微调稳定
